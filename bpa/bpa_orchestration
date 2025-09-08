@@ -1,0 +1,33 @@
+apiVersion: ai.sap.com/v1alpha1
+kind: Workflow
+metadata:
+  name: sbpa-excel-trigger
+annotations:
+  scenarios.ai.sap.com/name: sbpa-excel-triggering
+spec:
+  entrypoint: main
+  templates:
+    - name: main
+      inputs:
+        artifacts:
+          - name: instructions
+            path: /app/instructions.xlsx
+          - name: triggers
+            path: /app/triggers.json
+      container:
+        image: docker.io/<teenav1986>/sbpa-trigger:0.1.0
+        # If your image is PRIVATE, also add:
+        # imagePullSecrets:
+        #   - name: my-registry-secret
+        env:
+          - name: SBPA_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: SBPA_API_KEY
+                key: SBPA_API_KEY
+        command: ["python"]
+        args: ["main.py","--excel","/app/instructions.xlsx","--triggers","/app/triggers.json","--out","/app/run_log.xlsx"]
+      outputs:
+        artifacts:
+          - name: run_log
+            path: /app/run_log.xlsx
