@@ -1,33 +1,32 @@
-apiVersion: ai.sap.com/v1alpha1
-kind: Workflow
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
 metadata:
-  name: sbpa-excel-trigger
-annotations:
-  scenarios.ai.sap.com/name: sbpa-excel-triggering
+  name: bpa-trigger-runner
+  annotations:
+    scenarios.ai.sap.com/name: "BPA Orchestrator"
+    executables.ai.sap.com/name: "Trigger Runner"
+  labels:
+    scenarios.ai.sap.com/id: "bpa-orchestrator"
+    executables.ai.sap.com/id: "trigger-runner"
+    ai.sap.com/version: "1.0"
 spec:
-  entrypoint: main
+ # imagePullSecrets:
+ #  - name: credstutorialrepo        # your Docker Registry Secret name
+  entrypoint: run
   templates:
-    - name: main
+    - name: run
       inputs:
-        artifacts:
-          - name: instructions
-            path: /app/instructions.xlsx
-          - name: triggers
-            path: /app/triggers.json
+        parameters:
+          - name: excel_url
+            default: ""
       container:
-        image: docker.io/<teenav1986>/sbpa-trigger:0.1.0
-        # If your image is PRIVATE, also add:
-        # imagePullSecrets:
-        #   - name: my-registry-secret
+        image: docker.io/teenav1986/bpa-trigger-runner:01
+        command: ["/bin/sh","-c"]
+        args:
+          - "python /app/main.py --excel-url '{{inputs.parameters.excel_url}}'"
         env:
-          - name: SBPA_API_KEY
+          - name: BPA_MAP_JSON
             valueFrom:
               secretKeyRef:
-                name: SBPA_API_KEY
-                key: SBPA_API_KEY
-        command: ["python"]
-        args: ["main.py","--excel","/app/instructions.xlsx","--triggers","/app/triggers.json","--out","/app/run_log.xlsx"]
-      outputs:
-        artifacts:
-          - name: run_log
-            path: /app/run_log.xlsx
+                name: bpa-triggers-map   # Generic Secret name
+                key: bpa_map_json
