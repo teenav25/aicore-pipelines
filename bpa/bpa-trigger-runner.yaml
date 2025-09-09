@@ -4,8 +4,7 @@ metadata:
   name: bpa-trigger-runner
   annotations:
     scenarios.ai.sap.com/name: "BPA Orchestrator"
-    executables.ai.sap.com/name: "Trigger Runner"
-    ai.sap.com/version: "2.0"
+    executables.ai.sap.com/name: "Trigger Runner"  
 spec:
   imagePullSecrets:
     - name: docker-secret
@@ -17,7 +16,7 @@ spec:
           - name: excel_url
             default: ""
       container:
-        image: docker.io/teenav1986/bpa-trigger-runner:02
+        image: docker.io/teenav1986/bpa-trigger-runner:01
         command: ["/bin/sh","-c"]
         args:
           - "python /app/main.py --excel-url '{{inputs.parameters.excel_url}}'"
