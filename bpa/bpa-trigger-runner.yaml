@@ -1,28 +1,38 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: bpa-trigger-runner
+  name: bpa-trigger-runner               # Executable id (referenced by Launchpad)
   annotations:
-    scenarios.ai.sap.com/name: "BPA Orchestrator"
-    executables.ai.sap.com/name: "Trigger Runner"  
+    scenarios.ai.sap.com/name: "BPA Orchestrator"     # Scenario name shown in UI
+    executables.ai.sap.com/name: "Trigger Runner"     # Executable name shown in UI
+    executables.ai.sap.com/description: "Reads Excel and triggers BPA API Triggers"
+  labels:
+    scenarios.ai.sap.com/id: "bpa-orchestrator"       # keep stable; used for grouping
+    executables.ai.sap.com/id: "trigger-runner"       # keep stable; used for grouping
+    ai.sap.com/version: "1.0"
 spec:
   imagePullSecrets:
-    - name: docker-secret
+    - name: docker-secret            # <-- your Docker Registry Secret name (AI Core Admin → Docker Registry Secrets)
   entrypoint: run
   templates:
     - name: run
       inputs:
         parameters:
-          - name: excel_url
+          - name: excel_url              # passed at execution time (HTTPS or presigned URL)
             default: ""
+          - name: dry_run                # optional: "true" prints what would run
+            default: "false"
       container:
-        image: docker.io/teenav1986/bpa-trigger-runner:01
+        image: docker.io/teenav1986/bpa-trigger-runner:01   # <-- replace with your pushed image
         command: ["/bin/sh","-c"]
         args:
-          - "python /app/main.py --excel-url '{{inputs.parameters.excel_url}}'"
+          - >
+            python /app/main.py
+            --excel-url '{{inputs.parameters.excel_url}}'
+            {{- if eq (inputs.parameters.dry_run) "true" -}} --dry-run {{- end -}}
         env:
           - name: BPA_MAP_JSON
             valueFrom:
               secretKeyRef:
-                name: bpa-triggers-map    # <-- the Generic Secret you just created
-                key: bpa_map_json         # <-- the single key that holds the whole JSON
+                name: bpa-triggers-map    # <-- Generic Secret name (AI Core Admin → Generic Secrets)
+                key: bpa_map_json         # <-- single key containing the WHOLE JSON map for A/B/C
